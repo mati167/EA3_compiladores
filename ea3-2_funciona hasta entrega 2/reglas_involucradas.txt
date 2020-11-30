@@ -1,0 +1,23 @@
+write -> WRITE CTE_S
+sent -> write
+prog -> sent
+read -> READ ID
+sent -> read
+prog -> prog sent
+lista -> CTE
+lista -> lista COMA CTE
+lista -> lista COMA CTE
+lista -> lista COMA CTE
+lista -> lista COMA CTE
+lista -> lista COMA CTE
+posicion -> POSICION PARA ID PYC CA lista CC PARC
+asig -> ID ASIGNA posicion
+sent -> asig
+prog -> prog sent
+write -> WRITE CTE_S
+sent -> write
+prog -> prog sent
+write -> WRITE ID
+sent -> write
+prog -> prog sent
+S -> prog
