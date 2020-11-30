@@ -4,6 +4,12 @@
 #include <string.h>
 #include "y.tab.h"
 
+#define TOTAL	50
+#define	VARIABLE		0
+#define STRING			1
+#define	INTEGER				2
+
+
 // Estructuras de datos
 typedef struct{
     char nombre[51];
@@ -53,6 +59,17 @@ int crearTerceto_cic(char *uno, int dos, char *tres);
 void save_tercetos();
 /**** FIN TERCETOS ****/
 
+struct tabla {
+		char *nombre;
+		int	var;
+		char *valorS;
+		int	valorI;
+};
+
+struct tabla variables_id[TOTAL];
+int tablaIndex = 0;
+
+
 
 
 /**** Inicio assembler ****/
@@ -63,9 +80,21 @@ void genera_asm();
 char* guardadoEnTabla(char *cte_o_id);
 char* getCodOp(char*);
 
+void generarInicio(FILE *arch);
+void generarInicioCodigo(FILE* arch);
+void generarFinal(FILE *arch);
+void generarTabla(FILE *arch);
 
+
+
+
+void insertarentablaCTE_I(int cte);
+void insertarentablaCTE_S(char *str);
+void insertarentablaID(char* id);
+char *generaNombreASM(char *str, int tipo);
 
 int lista_valores = 0;
+int contString = 0;
 
 
 
@@ -91,7 +120,6 @@ int crearTS();
 %token PYC
 %token COMA
 %token ASIGNA
-%token MAS
 %token POSICION
 %token WRITE
 %token READ
@@ -103,9 +131,11 @@ int crearTS();
 
 S: prog	
 	{
+	
 		Indsent = Indprog;
 		insertar_regla("S -> prog");
 		generar_archivo_reglas();
+		printf("HOLA");
 		genera_asm();
 		printf("\nCompilacion OK.\n");
 	}
@@ -114,6 +144,7 @@ prog: sent
 		{
 			Indprog = Indsent;
 			insertar_regla("prog -> sent");
+			
 			printf("%s\n", "1");
 		}
 
@@ -145,11 +176,13 @@ read: READ  ID {
 			Indread = crearTerceto_cic("READ",crearTerceto_ccc($2, "",""),"");
 			insertar_regla("read -> READ ID");
 			//printf("%s\n", "6");
+			insertarentablaID($2);
 		}
 
 asig:  ID  ASIGNA
 
-		{ Indasig = crearTerceto_ccc($1, "",""); }
+		{ Indasig = crearTerceto_ccc($1, "","");
+		insertarentablaID($1);}
 		posicion
 		{
 			insertar_regla("asig -> ID ASIGNA posicion");
@@ -161,6 +194,7 @@ posicion:  POSICION PARA ID PYC CA
 
 		{	Indposicion = crearTerceto_ccc($3, "","");
 			Indposicion = crearTerceto_cic("POSICION",Indposicion,"");
+			insertarentablaID($3);
 		}
 
 		lista CC PARC
@@ -175,6 +209,7 @@ posicion: POSICION PARA ID PYC CA CC PARC
 			insertar_regla("posicion -> POSICION PARA ID PYC CA CC PARC");
 			Indposicion = crearTerceto_cii("POSICION",crearTerceto_ccc($3, "",""),Indposicion);
 			printf("lista tiene: %d\n", lista_valores);
+			insertarentablaID($3);
 		}
 
 lista: CTE
@@ -186,6 +221,7 @@ lista: CTE
 			Indresult = crearTerceto_cii("=",Indasig,Indlista);
 			crearTerceto_ccc("BI","","");
 			lista_valores++;
+			insertarentablaCTE_I($1);
 		}
 
 lista: lista COMA CTE
@@ -197,18 +233,21 @@ lista: lista COMA CTE
 			Indresult = crearTerceto_cii("=",Indasig,Indlista);
 			crearTerceto_ccc("BI","","");
 			lista_valores++;
+			insertarentablaCTE_I($3);
 		}
 
 write: WRITE CTE_S	{
 			insertar_regla("write -> WRITE CTE_S");
 			Indwrite = crearTerceto_cic("WRITE",crearTerceto_ccc($2, "",""),"");
 			//printf("%s\t%s\n", $1 "12");
+			insertarentablaCTE_S($2);
 		}
 
 write:  WRITE ID
 		{
 			insertar_regla("write -> WRITE ID");
 			Indwrite = crearTerceto_cic("WRITE",crearTerceto_ccc($2, "",""),"");
+			
 		}
 
 
@@ -385,22 +424,9 @@ void genera_asm()
 	 /* generamos el principio del assembler, que siempre es igual */
 
 
-	 fprintf(pf_asm, "include macros2.asm\n");
-	 fprintf(pf_asm, "include number.asm\n");
-	 fprintf(pf_asm, ".MODEL	LARGE \n");
-	 fprintf(pf_asm, ".386\n");
-	 fprintf(pf_asm, ".STACK 200h \n");
-
-	 fprintf(pf_asm, ".CODE \n");
-	 fprintf(pf_asm, "MAIN:\n");
-	 fprintf(pf_asm, "\n");
-
-    fprintf(pf_asm, "\n");
-    fprintf(pf_asm, "\t MOV AX,@DATA 	;inicializa el segmento de datos\n");
-    fprintf(pf_asm, "\t MOV DS,AX \n");
-    fprintf(pf_asm, "\t MOV ES,AX \n");
-    fprintf(pf_asm, "\t FNINIT \n");;
-    fprintf(pf_asm, "\n");
+		generarInicio(pf_asm);
+		generarTabla(pf_asm);
+		generarInicioCodigo(pf_asm);
 
 	int i, j;
 	int opSimple,  // Formato terceto (x,  ,  ) 
@@ -447,4 +473,105 @@ void genera_asm()
 
 		 fclose(pf_asm);
 	
+}
+
+void generarInicio(FILE *arch){
+  fprintf(arch, "include macros2.asm\ninclude number.asm\n\n.MODEL SMALL\n.386\n.STACK 200h\n\n");
+}
+
+void generarInicioCodigo(FILE* arch){
+	fprintf(arch, ".CODE\nSTART:\nMOV AX, @DATA\nMOV DS, AX\nFINIT\n\n");
+}
+
+void generarFinal(FILE *arch){
+    fprintf(arch, "\nMOV AH, 1\nINT 21h\nMOV AX, 4C00h\nINT 21h\n\nEND START\n");
+	// TODO: Preguntar por flags y escribir subrutinas
+}
+
+void generarTabla(FILE *arch){
+	int fin_tabla;
+    fprintf(arch, ".DATA\n");
+    fprintf(arch, "NEW_LINE DB 0AH,0DH,'$'\n");
+	fprintf(arch, "CWprevio DW ?\n");
+
+    for(int i=0; i<=30; i++){
+        fprintf(arch, "%s ", variables_id[i].nombre);
+        switch(variables_id[i].var){
+        case INTEGER:
+            fprintf(arch, "dd %d\n", variables_id[i].valorI);
+            break;
+        case STRING:
+            fprintf(arch, "db \"%s\", '$'\n", variables_id[i].valorS);
+            break;
+        default: //Es una variable int, float o puntero a string
+            fprintf(arch, "dd ?\n");
+        }
+    }
+
+    fprintf(arch, "\n");
+}
+
+void insertarentablaCTE_I(int cte){
+	if(lista_valores < TOTAL){
+		char *str;
+		char *nombre;
+		itoa(cte, str,10);
+		nombre = generaNombreASM(str, INTEGER);
+		strcpy(variables_id[lista_valores].nombre,nombre);
+		variables_id[lista_valores].valorI = cte;
+		variables_id[lista_valores].var = INTEGER;
+		lista_valores++;
+	}
+	else{
+		printf("\nDemasiadas variables y constantes\n");
+		exit(4);
+	}
+	
+}
+
+void insertarentablaCTE_S(char *str){
+	char* nombre;
+	if(lista_valores < TOTAL){
+		nombre = generaNombreASM(str, STRING);
+		strcpy(variables_id[lista_valores].nombre,nombre);
+		strcpy(variables_id[lista_valores].valorS, str);
+		variables_id[lista_valores].var = STRING;
+		lista_valores++;
+		}
+	else{
+		printf("\nDemasiadas variables y constantes\n");
+		exit(4);
+	}
+	
+}
+
+void insertarentablaID(char* id){
+	if(lista_valores < TOTAL){
+		strcpy(variables_id[lista_valores].nombre,id);
+	variables_id[lista_valores].var = VARIABLE;
+	lista_valores++;
+	}
+	else{
+		printf("\nDemasiadas variables y constantes\n");
+		exit(4);
+	}
+	
+}
+
+char *generaNombreASM(char *str, int tipo){
+	char* nombre = "_";
+	char* aux;
+	switch(tipo){
+	case INTEGER:
+		strcat(nombre, str);
+		break;
+	case STRING:
+		contString++;
+		sscanf(aux,"S_%d", contString);
+		strcat(nombre, aux);
+		break;
+	};
+	return nombre;
+
+
 }

@@ -91,8 +91,11 @@ void insertarEnTS(char *yytext, int isString)
 				char *sinDosPuntos;
 				
 				removerComillas(str, aux);
+				
 				sinEspacios = removerEspacios(aux);
+				
 				sinDosPuntos = removerDosPuntos(sinEspacios);
+				
 				
 				fprintf(ts, "_%-41s | %-30s | %-38s | %-30d\n", sinDosPuntos, "", aux, strlen(aux));
 				
@@ -166,14 +169,17 @@ void removerComillas(char *str, char *aux)
 	
     strncpy(aux, str, longStr);
     *(aux + longStr - 1) = '\0';
+	
 }
 
 char * removerEspacios(char *str)
 {
 	int longStr = strlen(str);
 	int i;
-	char *sinEspacios = strdup(str);
-	
+	//char *sinEspacios = strdup(str);
+	char *sinEspacios;
+	strcpy(sinEspacios,str);
+	printf("HOLA");
 	for(i = 0; i < longStr; i++)
 	{
 		if (*(sinEspacios + i) == ' ') 
