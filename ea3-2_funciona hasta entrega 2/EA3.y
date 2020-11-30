@@ -106,6 +106,7 @@ S: prog
 		Indsent = Indprog;
 		insertar_regla("S -> prog");
 		generar_archivo_reglas();
+		genera_asm();
 		printf("\nCompilacion OK.\n");
 	}
 
@@ -158,11 +159,14 @@ asig:  ID  ASIGNA
 
 posicion:  POSICION PARA ID PYC CA 
 
-		{	Indposicion = crearTerceto_ccc($3, "","");	}
+		{	Indposicion = crearTerceto_ccc($3, "","");
+			Indposicion = crearTerceto_cic("POSICION",Indposicion,"");
+		}
+
 		lista CC PARC
 		{
 			insertar_regla("posicion -> POSICION PARA ID PYC CA lista CC PARC");
-			 Indposicion = crearTerceto_cii("POSICION",Indposicion,Indlista);
+			 //Indposicion = crearTerceto_cii("POSICION",Indposicion,Indlista);
 			 printf("lista tiene: %d\n", lista_valores);
 		}
 
@@ -175,6 +179,7 @@ posicion: POSICION PARA ID PYC CA CC PARC
 
 lista: CTE
 		{
+			printf(" la constante sola es: %d\n", $1);
 			insertar_regla("lista -> CTE");
 			Indlista = crearTerceto_cii("CMP",Indposicion,crearTerceto_icc($1,"",""));
 			crearTerceto_cic("BNE",terceto_index+3,"");
@@ -185,6 +190,7 @@ lista: CTE
 
 lista: lista COMA CTE
 		{
+			//crearTerceto_ccc("BRANCH","","");
 			insertar_regla("lista -> lista COMA CTE");
 			Indlista = crearTerceto_cii("CMP",Indposicion,crearTerceto_icc($3,"",""));
 			crearTerceto_cic("BNE",terceto_index+3,"");
@@ -353,4 +359,92 @@ void generar_archivo_reglas()
 		fprintf(file, "%s\n", lista_reglas[i]);
 	}
 	fclose(file);
+}
+
+
+void genera_asm()
+{
+	int cont=0;
+	char* file_asm = "Final.asm";
+	FILE* pf_asm;
+	char aux[10];
+	
+	int lista_etiquetas[1000];
+	int cant_etiquetas = 0;
+	char etiqueta_aux[10];
+
+	char ult_op1_cmp[30];
+	strcpy(ult_op1_cmp, "");
+	char op1_guardado[30];
+
+	if((pf_asm = fopen(file_asm, "wt")) == NULL)
+	{
+		printf("Error al generar el asembler \n");
+		exit(1);
+	}
+	 /* generamos el principio del assembler, que siempre es igual */
+
+
+	 fprintf(pf_asm, "include macros2.asm\n");
+	 fprintf(pf_asm, "include number.asm\n");
+	 fprintf(pf_asm, ".MODEL	LARGE \n");
+	 fprintf(pf_asm, ".386\n");
+	 fprintf(pf_asm, ".STACK 200h \n");
+
+	 fprintf(pf_asm, ".CODE \n");
+	 fprintf(pf_asm, "MAIN:\n");
+	 fprintf(pf_asm, "\n");
+
+    fprintf(pf_asm, "\n");
+    fprintf(pf_asm, "\t MOV AX,@DATA 	;inicializa el segmento de datos\n");
+    fprintf(pf_asm, "\t MOV DS,AX \n");
+    fprintf(pf_asm, "\t MOV ES,AX \n");
+    fprintf(pf_asm, "\t FNINIT \n");;
+    fprintf(pf_asm, "\n");
+
+	int i, j;
+	int opSimple,  // Formato terceto (x,  ,  ) 
+		opUnaria,  // Formato terceto (x, x,  )
+		opBinaria; // Formato terceto (x, x, x)
+	int agregar_etiqueta_final_nro = -1;
+	
+	// Armo el assembler
+	for (i = 100; i < terceto_index; i++) 
+	{
+		//printf("TERCETO NUMERO %d \n", i);
+
+		if (strcmp("", tercetos[i].dos) == 0) {
+			opSimple = 1;
+			opUnaria = 0;
+			opBinaria = 0;
+		} else if (strcmp("", tercetos[i].tres) == 0) {
+			opSimple = 0;
+			opUnaria = 1;
+			opBinaria = 0;
+		} else {
+			opSimple = 0; 
+			opUnaria = 0;
+			opBinaria = 1;
+		}
+
+		for (j=101;j<=cant_etiquetas;j++) {
+			if (i == lista_etiquetas[j])
+			{
+				sprintf(etiqueta_aux, "ETIQ_%d", lista_etiquetas[j]);
+				fprintf(pf_asm, "%s: \n", etiqueta_aux);
+			}
+		}
+		if (opSimple == 1) {
+			// Ids, constantes
+			cant_op++;
+			strcpy(lista_operandos_assembler[cant_op], tercetos[i].uno);
+		} 
+
+	}
+
+
+
+
+		 fclose(pf_asm);
+	
 }
