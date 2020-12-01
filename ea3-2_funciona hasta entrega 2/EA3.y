@@ -4,10 +4,10 @@
 #include <string.h>
 #include "y.tab.h"
 
-#define TOTAL	50
+#define TOTAL			50
 #define	VARIABLE		0
 #define STRING			1
-#define	INTEGER				2
+#define	INTEGER			2
 
 
 // Estructuras de datos
@@ -46,8 +46,8 @@ struct terceto {
 	char *dos;
 	char *tres;
 };
-struct terceto tercetos[1000];
-int terceto_index = 100;
+struct terceto tercetos[100];
+int terceto_index = 0;
 
 int crearTerceto_ccc(char *uno, char *dos, char *tres);
 int crearTerceto_cci(char *uno, char *dos, int tres);
@@ -59,6 +59,8 @@ int crearTerceto_cic(char *uno, int dos, char *tres);
 void save_tercetos();
 /**** FIN TERCETOS ****/
 
+
+/**** Inicio assembler ****/
 struct tabla {
 		char *nombre;
 		int	var;
@@ -66,13 +68,10 @@ struct tabla {
 		int	valorI;
 };
 
+
 struct tabla variables_id[TOTAL];
 int tablaIndex = 0;
 
-
-
-
-/**** Inicio assembler ****/
 char lista_operandos_assembler[100][100];
 int cant_op = 0;
 
@@ -94,6 +93,7 @@ void insertarentablaID(char* id);
 char *generaNombreASM(char *str, int tipo);
 
 int lista_valores = 0;
+int total_variables = 0;
 int contString = 0;
 
 
@@ -135,7 +135,6 @@ S: prog
 		Indsent = Indprog;
 		insertar_regla("S -> prog");
 		generar_archivo_reglas();
-		printf("HOLA");
 		genera_asm();
 		printf("\nCompilacion OK.\n");
 	}
@@ -176,13 +175,15 @@ read: READ  ID {
 			Indread = crearTerceto_cic("READ",crearTerceto_ccc($2, "",""),"");
 			insertar_regla("read -> READ ID");
 			//printf("%s\n", "6");
+			
 			insertarentablaID($2);
 		}
 
 asig:  ID  ASIGNA
 
 		{ Indasig = crearTerceto_ccc($1, "","");
-		insertarentablaID($1);}
+		//insertarentablaID($1);
+		}
 		posicion
 		{
 			insertar_regla("asig -> ID ASIGNA posicion");
@@ -194,7 +195,7 @@ posicion:  POSICION PARA ID PYC CA
 
 		{	Indposicion = crearTerceto_ccc($3, "","");
 			Indposicion = crearTerceto_cic("POSICION",Indposicion,"");
-			insertarentablaID($3);
+			//insertarentablaID($3);
 		}
 
 		lista CC PARC
@@ -209,7 +210,7 @@ posicion: POSICION PARA ID PYC CA CC PARC
 			insertar_regla("posicion -> POSICION PARA ID PYC CA CC PARC");
 			Indposicion = crearTerceto_cii("POSICION",crearTerceto_ccc($3, "",""),Indposicion);
 			printf("lista tiene: %d\n", lista_valores);
-			insertarentablaID($3);
+			//insertarentablaID($3);
 		}
 
 lista: CTE
@@ -221,7 +222,7 @@ lista: CTE
 			Indresult = crearTerceto_cii("=",Indasig,Indlista);
 			crearTerceto_ccc("BI","","");
 			lista_valores++;
-			insertarentablaCTE_I($1);
+			//insertarentablaCTE_I($1);
 		}
 
 lista: lista COMA CTE
@@ -233,14 +234,16 @@ lista: lista COMA CTE
 			Indresult = crearTerceto_cii("=",Indasig,Indlista);
 			crearTerceto_ccc("BI","","");
 			lista_valores++;
-			insertarentablaCTE_I($3);
+			//insertarentablaCTE_I($3);
 		}
 
 write: WRITE CTE_S	{
+			
 			insertar_regla("write -> WRITE CTE_S");
 			Indwrite = crearTerceto_cic("WRITE",crearTerceto_ccc($2, "",""),"");
 			//printf("%s\t%s\n", $1 "12");
 			insertarentablaCTE_S($2);
+			
 		}
 
 write:  WRITE ID
@@ -289,7 +292,7 @@ int yyerror(void)
 
 int crearTS()
 {
-	if ((ts = fopen("ts.txt", "wt")) == NULL)
+	if ((ts = fopen("ts.txt", "w")) == NULL)
 	{
 		printf("No se puede abrir el archivo ts.txt\n");
 		return 0;
@@ -336,13 +339,6 @@ int crearTerceto_cii(char *uno, int dos, int tres) {
 	return crearTerceto_cci(uno, dos_char, tres);
 }
 
-int crearTerceto_fcc(float uno, char *dos, char *tres) {
-	char *uno_char = (char*) malloc(sizeof(float));
-	snprintf(uno_char, sizeof(float), "%f", uno);
-
-	return crearTerceto_ccc(uno_char, dos, tres);
-}
-
 int crearTerceto_icc(int uno, char *dos, char *tres) {
 	char *uno_char = (char*) malloc(sizeof(int));
 	itoa(uno, uno_char, 10);
@@ -366,10 +362,10 @@ void save_tercetos() {
 	}
 	else
 	{
-		int i = 100;
+		int i = 0;
 		for (i;i<terceto_index;i++) {
 			// printf("%d (%s, %s, %s)\n", i, tercetos[i].uno, tercetos[i].dos, tercetos[i].tres);
-			fprintf(file, "%d (%s, %s, %s)\n", i, tercetos[i].uno, tercetos[i].dos, tercetos[i].tres);
+			fprintf(file, "%d (%s, %s, %s)\n", i+100, tercetos[i].uno, tercetos[i].dos, tercetos[i].tres);
 		}
 		fclose(file);
 	}
@@ -434,11 +430,11 @@ void genera_asm()
 		opBinaria; // Formato terceto (x, x, x)
 	int agregar_etiqueta_final_nro = -1;
 	
+		
 	// Armo el assembler
-	for (i = 100; i < terceto_index; i++) 
+	for (i = 0; i < terceto_index; i++) 
 	{
-		//printf("TERCETO NUMERO %d \n", i);
-
+	
 		if (strcmp("", tercetos[i].dos) == 0) {
 			opSimple = 1;
 			opUnaria = 0;
@@ -448,18 +444,14 @@ void genera_asm()
 			opUnaria = 1;
 			opBinaria = 0;
 		} else {
+		
 			opSimple = 0; 
 			opUnaria = 0;
 			opBinaria = 1;
 		}
+		
 
-		for (j=101;j<=cant_etiquetas;j++) {
-			if (i == lista_etiquetas[j])
-			{
-				sprintf(etiqueta_aux, "ETIQ_%d", lista_etiquetas[j]);
-				fprintf(pf_asm, "%s: \n", etiqueta_aux);
-			}
-		}
+
 		if (opSimple == 1) {
 			// Ids, constantes
 			cant_op++;
@@ -494,7 +486,7 @@ void generarTabla(FILE *arch){
     fprintf(arch, "NEW_LINE DB 0AH,0DH,'$'\n");
 	fprintf(arch, "CWprevio DW ?\n");
 
-    for(int i=0; i<=30; i++){
+    for(int i=0; i<total_variables; i++){
         fprintf(arch, "%s ", variables_id[i].nombre);
         switch(variables_id[i].var){
         case INTEGER:
@@ -517,10 +509,10 @@ void insertarentablaCTE_I(int cte){
 		char *nombre;
 		itoa(cte, str,10);
 		nombre = generaNombreASM(str, INTEGER);
-		strcpy(variables_id[lista_valores].nombre,nombre);
-		variables_id[lista_valores].valorI = cte;
-		variables_id[lista_valores].var = INTEGER;
-		lista_valores++;
+		strcpy(variables_id[total_variables].nombre,nombre);
+		variables_id[total_variables].valorI = cte;
+		variables_id[total_variables].var = INTEGER;
+		total_variables++;
 	}
 	else{
 		printf("\nDemasiadas variables y constantes\n");
@@ -532,11 +524,13 @@ void insertarentablaCTE_I(int cte){
 void insertarentablaCTE_S(char *str){
 	char* nombre;
 	if(lista_valores < TOTAL){
-		nombre = generaNombreASM(str, STRING);
-		strcpy(variables_id[lista_valores].nombre,nombre);
-		strcpy(variables_id[lista_valores].valorS, str);
-		variables_id[lista_valores].var = STRING;
-		lista_valores++;
+		struct tabla tabla_aux;
+		tabla_aux.valorS = malloc(sizeof(char)*strlen(str)+1);
+		tabla_aux.nombre = malloc(sizeof(char)*strlen(str)+1);
+		strcpy(tabla_aux.valorS,str);
+		tabla_aux.var = STRING;
+		variables_id[total_variables] = tabla_aux;
+		total_variables++;
 		}
 	else{
 		printf("\nDemasiadas variables y constantes\n");
@@ -546,16 +540,21 @@ void insertarentablaCTE_S(char *str){
 }
 
 void insertarentablaID(char* id){
+	
+	printf("ID = %s\n", id);
 	if(lista_valores < TOTAL){
-		strcpy(variables_id[lista_valores].nombre,id);
-	variables_id[lista_valores].var = VARIABLE;
-	lista_valores++;
+		struct tabla tabla_aux;
+		tabla_aux.nombre = malloc(sizeof(char)*strlen(id)+1);
+		strcpy(tabla_aux.nombre,id);
+		tabla_aux.var = VARIABLE;
+		variables_id[total_variables] = tabla_aux;
+		total_variables++;
 	}
 	else{
 		printf("\nDemasiadas variables y constantes\n");
 		exit(4);
 	}
-	
+
 }
 
 char *generaNombreASM(char *str, int tipo){
@@ -572,6 +571,5 @@ char *generaNombreASM(char *str, int tipo){
 		break;
 	};
 	return nombre;
-
 
 }

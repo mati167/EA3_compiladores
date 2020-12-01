@@ -63,6 +63,7 @@ CTE_S				\"({SIMBOLO}|{LETRA}|{DIGITO})+\"
 						return CTE;
 					}
 {CTE_S}				{
+						
 						insertarEnTS(yytext, 1); 
 						yylval.cad = strdup(yytext); 
 						return CTE_S;
@@ -80,23 +81,24 @@ void insertarEnTS(char *yytext, int isString)
 		{
 			printf("No se puede abrir el archivo ts.txt\n");
 		}
+		
 		else 
 		{
-			if (isString)
+			
+			if (isString )
 			{
 				
 				char *str = yytext + 1;
 				char *aux = malloc(sizeof(char)*40);
-				char *sinEspacios;
-				char *sinDosPuntos;
+				char *sinEspacios = malloc(sizeof(char)*40);
+				char *sinDosPuntos = malloc(sizeof(char)*40);
 				
 				removerComillas(str, aux);
 				
 				sinEspacios = removerEspacios(aux);
 				
 				sinDosPuntos = removerDosPuntos(sinEspacios);
-				
-				
+
 				fprintf(ts, "_%-41s | %-30s | %-38s | %-30d\n", sinDosPuntos, "", aux, strlen(aux));
 				
 				free(aux);
@@ -176,10 +178,8 @@ char * removerEspacios(char *str)
 {
 	int longStr = strlen(str);
 	int i;
-	//char *sinEspacios = strdup(str);
-	char *sinEspacios;
-	strcpy(sinEspacios,str);
-	printf("HOLA");
+	char *sinEspacios = strdup(str);
+	
 	for(i = 0; i < longStr; i++)
 	{
 		if (*(sinEspacios + i) == ' ') 

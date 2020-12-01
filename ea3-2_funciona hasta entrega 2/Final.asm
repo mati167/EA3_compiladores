@@ -1,14 +1,20 @@
 include macros2.asm
 include number.asm
-.MODEL	LARGE 
+
+.MODEL SMALL
 .386
-.STACK 200h 
-.CODE 
-MAIN:
+.STACK 200h
 
+.DATA
+NEW_LINE DB 0AH,0DH,'$'
+CWprevio DW ?
+àot db ""Ingrese un valor pivot mayor o igual a 1: "", '$'
+pivot dd ?
+(·t db ""Elemento encontrado en posicion: "", '$'
 
-	 MOV AX,@DATA 	;inicializa el segmento de datos
-	 MOV DS,AX 
-	 MOV ES,AX 
-	 FNINIT 
+.CODE
+START:
+MOV AX, @DATA
+MOV DS, AX
+FINIT
 
