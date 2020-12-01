@@ -63,7 +63,6 @@ CTE_S				\"({SIMBOLO}|{LETRA}|{DIGITO})+\"
 						return CTE;
 					}
 {CTE_S}				{
-						printf("hola\n");
 						insertarEnTS(yytext, 1); 
 						yylval.cad = strdup(yytext); 
 						return CTE_S;

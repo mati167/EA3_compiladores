@@ -9,7 +9,6 @@ lista -> lista COMA CTE
 lista -> lista COMA CTE
 lista -> lista COMA CTE
 lista -> lista COMA CTE
-lista -> lista COMA CTE
 posicion -> POSICION PARA ID PYC CA lista CC PARC
 asig -> ID ASIGNA posicion
 sent -> asig

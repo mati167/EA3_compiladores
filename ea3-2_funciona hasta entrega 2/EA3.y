@@ -174,7 +174,7 @@ sent: read {
 read: READ  ID {
 			Indread = crearTerceto_cic("READ",crearTerceto_ccc($2, "",""),"");
 			insertar_regla("read -> READ ID");
-			printf("%s\n", "6");
+			//printf("%s\n", "6");
 			
 			insertarentablaID($2);
 		}
@@ -208,6 +208,9 @@ posicion:  POSICION PARA ID PYC CA
 			 //Indposicion = crearTerceto_cii("POSICION",Indposicion,Indlista);
 			 //printf("lista tiene: %d\n", lista_valores);
 			 crearTerceto_ccc("BRANCH","_X_","");
+			 insertarentablaCTE_S("\"Elemento no encontrado\"");
+			 //Indposicion = crearTerceto_ccc("VACIA","\"Elemento no encontrado\"","");
+
 		}
 
 posicion: POSICION PARA ID PYC CA CC PARC
@@ -219,6 +222,8 @@ posicion: POSICION PARA ID PYC CA CC PARC
 			//printf("lista tiene: %d\n", lista_valores);
 			//insertarentablaID($3);
 			crearTerceto_ccc("BRANCH","_X_","");
+			crearTerceto_ccc("VACIA","La lista esta vacia","");
+			insertarentablaCTE_S("\"La lista esta vacia\"");
 		}
 
 lista: CTE
@@ -439,7 +444,7 @@ void genera_asm()
 		opUnaria,  // Formato terceto (x, x,  )
 		opBinaria; // Formato terceto (x, x, x)
 	int agregar_etiqueta_final_nro = -1;
-	
+	int lista_valores_aux = lista_valores;
 		
 	// Armo el assembler
 	for (i = 0; i < terceto_index; i++) 
@@ -480,8 +485,27 @@ void genera_asm()
 					fprintf(pf_asm, "\t DisplayString %s \n", dato.nombre);
 					
 					}
-				else
-					fprintf(pf_asm, "\t DisplayFloat %s,2 \n", dato.nombre);
+				else{
+					if(lista_valores_aux == 0){
+					printf("el indice es: %d\n",atoi(tercetos[i].dos)-3);
+					
+						dato2 = buscarTipoTS("\"La lista esta vacia\"");
+						fprintf(pf_asm, "\t DisplayString %s \n", dato2.nombre);
+					}
+					else{
+					/*
+						fprintf(pf_asm, "\n\t FLD %s\t\t \n", dato.nombre);
+						fprintf(pf_asm, "\t FLD @0\t\t\n");
+						fprintf(pf_asm, "\tfxch\n\tfcom\n\tfstsw AX\n\tsahf\n\n");
+
+						//fprintf(pf_asm, "\t JEQ BRANCH_%s \t\t\t\t;Salto al branch \n", tercetos[i].dos);
+						*/
+
+						fprintf(pf_asm, "\t DisplayInteger %s \n", dato.nombre);
+					}
+				}
+
+
 				// Siempre inserto nueva linea despues de mostrar msj
 					fprintf(pf_asm, "\t newLine \n");
 					
@@ -489,7 +513,7 @@ void genera_asm()
 			else if (strcmp("READ", tercetos[i].uno) == 0) 
 			{
 					// pongo getfloat para manejar todo con fld en las operaciones
-					fprintf(pf_asm, "\t GetFloat %s\n", tercetos[atoi(tercetos[i].dos)].uno);	
+					fprintf(pf_asm, "\t GetInteger %s\n\tNEWLINE\n", tercetos[atoi(tercetos[i].dos)].uno);	
 			}
 			else // saltos
 			{
@@ -504,7 +528,7 @@ void genera_asm()
 				else if(strcmp(codigo, "BRANCH") ==0){
 				
 					fflush(pf_asm); 
-					fprintf(pf_asm, " BRANCH_%d\n", i);
+					fprintf(pf_asm, " BRANCH_%d:\n", i);
 				}
 				else if(strcmp(codigo, "JNE") ==0){
 					fflush(pf_asm); 
@@ -530,14 +554,10 @@ void genera_asm()
 					
 					dato = buscarTipoTS(tercetos[atoi(tercetos[i].dos)].uno);
 					dato2 = buscarTipoTS(tercetos[atoi(tercetos[i].tres)].uno);
-					printf("%s",dato.nombre);
 
 					fprintf(pf_asm, "\n\t FLD %s\t\t \n", dato.nombre);
 					fprintf(pf_asm, "\t FLD %s\t\t\n", dato2.nombre);
-					fprintf(pf_asm, "\t FCOMP\t\t\n");
-					fprintf(pf_asm, "\t FFREE ST(0) \t\n");
-					fprintf(pf_asm, "\t FSTSW AX \t\t\n");
-					fprintf(pf_asm, "\t SAHF \t\t\t\n\n");
+					fprintf(pf_asm, "\tfxch\n\tfcom\n\tfstsw AX\n\tsahf\n\n");
 					
 			}
 		}
@@ -578,13 +598,14 @@ void generarTabla(FILE *arch){
             fprintf(arch, "dd\t\t %d\n", variables_id[i].valorI);
             break;
         case STRING:
-            fprintf(arch, "db\t\t \"%s\", '$'\n", variables_id[i].valorS);
+            fprintf(arch, "db\t\t %s, '$', %d dup (?)\n", variables_id[i].valorS, strlen(variables_id[i].valorS));
             break;
         default: //Es una variable int, float o puntero a string
             fprintf(arch, "dd\t\t ?\n");
         }
     }
-	fprintf(arch, "@cont\t\tdd\t0\n");
+	fprintf(arch, "@cont\tdd\t0\n");
+	fprintf(arch, "@0\t\tdd\t0\n");
 	fprintf(arch, "@1\t\tdd\t1\n");
     fprintf(arch, "\n\n");
 }
@@ -684,10 +705,8 @@ struct tabla buscarTipoTS(char* nombreVar) {
 		
 		char *nomCte = malloc(sizeof(char)*strlen(nombreVar)+2);
 		strcpy(nomCte, nombreVar);
-		printf("%s\n",nomCte);
 		for(i=0; i< total_variables;i++){
 			if( strcmp(nomCte, variables_id[i].valorS) == 0 || strcmp(nomCte, variables_id[i].nombre) == 0 ||  strcmp(aux, variables_id[i].nombre) == 0 ){
-					printf("LA VARIABLE ES: %s\n",variables_id[i].nombre);
 				return variables_id[i];
 			}
 		
@@ -712,5 +731,8 @@ char* getCodOp(char* token)
 	}
 	else if (!strcmp(token, "POSICION")){
 		return "POSICION";
+	}
+	else if (!strcmp(token, "VACIA")){
+		return "VACIA";
 	}
 }
