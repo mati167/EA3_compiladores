@@ -151,7 +151,7 @@ prog: prog sent
 		{
 			Indprog = Indsent;
 			insertar_regla("prog -> prog sent");
-			printf("%s\n", "1");
+			printf("%s\n", "2");
 		}
 
 sent: read {
@@ -174,9 +174,9 @@ sent: read {
 read: READ  ID {
 			Indread = crearTerceto_cic("READ",crearTerceto_ccc($2, "",""),"");
 			insertar_regla("read -> READ ID");
-			//printf("%s\n", "6");
+			printf("%s\n", "6");
 			
-			insertarentablaID($2);
+			//insertarentablaID($2);
 		}
 
 asig:  ID  ASIGNA
@@ -186,6 +186,7 @@ asig:  ID  ASIGNA
 		}
 		posicion
 		{
+			
 			insertar_regla("asig -> ID ASIGNA posicion");
 			 // Indasig = crearTerceto_cii("=",Indasig,Indposicion);
 				Indasig = Indresult; 
@@ -196,6 +197,7 @@ posicion:  POSICION PARA ID PYC CA
 		{	Indposicion = crearTerceto_ccc($3, "","");
 			Indposicion = crearTerceto_cic("POSICION",Indposicion,"");
 			//insertarentablaID($3);
+			
 		}
 
 		lista CC PARC
@@ -241,7 +243,7 @@ write: WRITE CTE_S	{
 			
 			insertar_regla("write -> WRITE CTE_S");
 			Indwrite = crearTerceto_cic("WRITE",crearTerceto_ccc($2, "",""),"");
-			//printf("%s\t%s\n", $1 "12");
+			printf("%s\t%s\n", $2 ,"12");
 			insertarentablaCTE_S($2);
 			
 		}
@@ -434,7 +436,7 @@ void genera_asm()
 	// Armo el assembler
 	for (i = 0; i < terceto_index; i++) 
 	{
-	
+		//printf("\n%s\n",tercetos[i].uno);
 		if (strcmp("", tercetos[i].dos) == 0) {
 			opSimple = 1;
 			opUnaria = 0;

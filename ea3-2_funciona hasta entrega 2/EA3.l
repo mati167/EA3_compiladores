@@ -63,7 +63,7 @@ CTE_S				\"({SIMBOLO}|{LETRA}|{DIGITO})+\"
 						return CTE;
 					}
 {CTE_S}				{
-						
+						printf("hola\n");
 						insertarEnTS(yytext, 1); 
 						yylval.cad = strdup(yytext); 
 						return CTE_S;
@@ -85,7 +85,7 @@ void insertarEnTS(char *yytext, int isString)
 		else 
 		{
 			
-			if (isString )
+			if (isString   )
 			{
 				
 				char *str = yytext + 1;
@@ -101,7 +101,12 @@ void insertarEnTS(char *yytext, int isString)
 
 				fprintf(ts, "_%-41s | %-30s | %-38s | %-30d\n", sinDosPuntos, "", aux, strlen(aux));
 				
+				/*
 				free(aux);
+				printf("antes de los free\n");
+				free(sinEspacios);
+				free(sinDosPuntos);
+				*/
 			}
 			else 
 			{
