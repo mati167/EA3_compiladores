@@ -197,7 +197,7 @@ posicion:  POSICION PARA ID PYC CA
 		{	
 			crearTerceto_cic("BRANCH",terceto_index,"");
 			Indposicion = crearTerceto_ccc($3, "","");
-			Indposicion = crearTerceto_cic("POSICION",Indposicion,"");
+			//Indposicion = crearTerceto_cic("POSICION",Indposicion,"");
 			//insertarentablaID($3);
 			
 		}
@@ -207,15 +207,18 @@ posicion:  POSICION PARA ID PYC CA
 			insertar_regla("posicion -> POSICION PARA ID PYC CA lista CC PARC");
 			 //Indposicion = crearTerceto_cii("POSICION",Indposicion,Indlista);
 			 printf("lista tiene: %d\n", lista_valores);
+			 crearTerceto_ccc("BRANCH","_X_","");
 		}
 
 posicion: POSICION PARA ID PYC CA CC PARC
 		{
 			insertar_regla("posicion -> POSICION PARA ID PYC CA CC PARC");
 			crearTerceto_ccc("BRANCH","_X_","");
-			Indposicion = crearTerceto_cii("POSICION",crearTerceto_ccc($3, "",""),Indposicion);
+			//Indposicion = crearTerceto_cii("POSICION",crearTerceto_ccc($3, "",""),Indposicion);
+			Indposicion = crearTerceto_ccc($3, "","");
 			printf("lista tiene: %d\n", lista_valores);
 			//insertarentablaID($3);
+			crearTerceto_ccc("BRANCH","_X_","");
 		}
 
 lista: CTE
@@ -493,16 +496,88 @@ void genera_asm()
 				
 				if(strcmp(codigo, "JMP") ==0 ){
 					fflush(pf_asm); 
-					fprintf(pf_asm, "\t %s BRANCH_%d \t;Salto al branch \n", codigo, lista_valores*6);
-					lista_valores--;
+					fprintf(pf_asm, "\t %s BRANCH_%d \t\t\t\t;Salto al branch \n", codigo, i + (--lista_valores*6)+1);
+					//lista_valores--;
 				}
 				else if(strcmp(codigo, "BRANCH") ==0){
 				
 					fflush(pf_asm); 
-					fprintf(pf_asm, " BRANCH_%d\n", i+1);
+					fprintf(pf_asm, " BRANCH_%d\n", i);
+				}
+				else if(strcmp(codigo, "JNE") ==0){
+					fflush(pf_asm); 
+					fprintf(pf_asm, "\t %s BRANCH_%s \t\t\t\t;Salto al branch \n", codigo,tercetos[i].dos);
 				}
 			}
- 		}
+ 		}/*
+		else {
+			// Expresiones ; Comparaciones ; Asignacion
+			char *op2 = (char*) malloc(100*sizeof(char));
+			strcpy(op2, lista_operandos_assembler[cant_op]);
+			cant_op--;
+
+			char *op1 = (char*) malloc(100*sizeof(char));
+			if (strcmp(tercetos[i].uno, "CMP" ) == 0 && strcmp(ult_op1_cmp, tercetos[i].dos) == 0 )
+			{
+				strcpy(op1, op1_guardado);
+			}
+			else 
+			{
+				strcpy(op1, lista_operandos_assembler[cant_op]); 
+				cant_op--;
+				strcpy(op1_guardado, op1);
+			}
+			
+			if (strcmp(tercetos[i].uno, "=" ) == 0)
+			{
+				int tipo = buscarTipoTS(tercetos[atoi(tercetos[i].dos)].uno);
+				if (tipo == Float | tipo == Integer) // Si se quiere separar integer hay que ver tambien las expresiones
+				{
+					fprintf(pf_asm, "\t FLD %s \t;Cargo valor \n", guardadoEnTabla(op1));
+					fprintf(pf_asm, "\t FSTP %s \t; Se lo asigno a la variable que va a guardar el resultado \n", guardadoEnTabla(op2));
+				}
+				else
+				{0
+					fprintf(pf_asm, "\t mov si,OFFSET %s \t;Cargo en si el origen\n", guardadoEnTabla(op1));
+					fprintf(pf_asm, "\t mov di,OFFSET %s \t; cargo en di el destino \n", guardadoEnTabla(op2));
+					fprintf(pf_asm, "\t STRCPY\t; llamo a la macro para copiar \n");
+				}	
+			}
+			else if (strcmp(tercetos[i].uno, "CMP" ) == 0)
+			{
+				int tipo = buscarTipoTS(op1);
+				if (tipo == Float | tipo == Integer) 
+				{
+					fprintf(pf_asm, "\t FLD %s\t\t;comparacion, operando1 \n", guardadoEnTabla(op1));
+					fprintf(pf_asm, "\t FLD %s\t\t;comparacion, operando2 \n", guardadoEnTabla(op2));
+					fprintf(pf_asm, "\t FCOMP\t\t;Comparo \n");
+					fprintf(pf_asm, "\t FFREE ST(0) \t; Vacio ST0\n");
+					fprintf(pf_asm, "\t FSTSW AX \t\t; mueve los bits C a FLAGS\n");
+					fprintf(pf_asm, "\t SAHF \t\t\t;Almacena el registro AH en el registro FLAGS \n");
+				}
+				else
+				{
+					fprintf(pf_asm, "\t mov si,OFFSET %s \t;Cargo operando1\n", guardadoEnTabla(op1));
+					fprintf(pf_asm, "\t mov di,OFFSET %s \t; cargo operando2 \n", guardadoEnTabla(op2));
+					fprintf(pf_asm, "\t STRCMP\t; llamo a la macro para comparar \n");	
+				}
+
+				strcpy(ult_op1_cmp, tercetos[i].dos);
+			}
+			else
+			{
+				sprintf(aux, "_aux%d", i); // auxiliar relacionado al terceto
+				fflush(pf_asm);
+				fprintf(pf_asm, "\t FLD %s \t;Cargo operando 1\n", guardadoEnTabla(op1));
+				fprintf(pf_asm, "\t FLD %s \t;Cargo operando 2\n", guardadoEnTabla(op2));
+				fflush(pf_asm);
+
+				fprintf(pf_asm, "\t %s \t\t;Opero\n", getCodOp(tercetos[i].uno));
+				fprintf(pf_asm, "\t FSTP %s \t;Almaceno el resultado en una var auxiliar\n", guardadoEnTabla(aux));
+				
+				cant_op++;
+				strcpy(lista_operandos_assembler[cant_op], aux);
+			}*/
 
 	}
 
@@ -541,7 +616,8 @@ void generarTabla(FILE *arch){
             fprintf(arch, "dd\t ?\n");
         }
     }
-
+	fprintf(arch, "@cont\tdd\t0\n");
+	fprintf(arch, "_1_\tdd\t1\n");
     fprintf(arch, "\n\n");
 }
 
