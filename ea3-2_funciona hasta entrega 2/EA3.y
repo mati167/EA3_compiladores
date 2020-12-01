@@ -144,14 +144,14 @@ prog: sent
 			Indprog = Indsent;
 			insertar_regla("prog -> sent");
 			
-			printf("%s\n", "1");
+			//printf("%s\n", "1");
 		}
 
 prog: prog sent 
 		{
 			Indprog = Indsent;
 			insertar_regla("prog -> prog sent");
-			printf("%s\n", "2");
+			//printf("%s\n", "2");
 		}
 
 sent: read {
@@ -206,7 +206,7 @@ posicion:  POSICION PARA ID PYC CA
 		{
 			insertar_regla("posicion -> POSICION PARA ID PYC CA lista CC PARC");
 			 //Indposicion = crearTerceto_cii("POSICION",Indposicion,Indlista);
-			 printf("lista tiene: %d\n", lista_valores);
+			 //printf("lista tiene: %d\n", lista_valores);
 			 crearTerceto_ccc("BRANCH","_X_","");
 		}
 
@@ -216,14 +216,14 @@ posicion: POSICION PARA ID PYC CA CC PARC
 			crearTerceto_ccc("BRANCH","_X_","");
 			//Indposicion = crearTerceto_cii("POSICION",crearTerceto_ccc($3, "",""),Indposicion);
 			Indposicion = crearTerceto_ccc($3, "","");
-			printf("lista tiene: %d\n", lista_valores);
+			//printf("lista tiene: %d\n", lista_valores);
 			//insertarentablaID($3);
 			crearTerceto_ccc("BRANCH","_X_","");
 		}
 
 lista: CTE
 		{
-			printf(" la constante sola es: %d\n", $1);
+			//printf(" la constante sola es: %d\n", $1);
 			insertar_regla("lista -> CTE");
 			Indlista = crearTerceto_cii("CMP",Indposicion,crearTerceto_icc($1,"",""));
 			crearTerceto_cic("BNE",terceto_index+3,"");
@@ -249,7 +249,7 @@ write: WRITE CTE_S	{
 			
 			insertar_regla("write -> WRITE CTE_S");
 			Indwrite = crearTerceto_cic("WRITE",crearTerceto_ccc($2, "",""),"");
-			printf("%s\t%s\n", $2 ,"12");
+			//printf("%s\t%s\n", $2 ,"12");
 			insertarentablaCTE_S($2);
 			
 		}
@@ -419,6 +419,8 @@ void genera_asm()
 	char ult_op1_cmp[30];
 	strcpy(ult_op1_cmp, "");
 	char op1_guardado[30];
+	struct tabla dato;
+	struct tabla dato2;
 
 	if((pf_asm = fopen(file_asm, "wt")) == NULL)
 	{
@@ -442,7 +444,7 @@ void genera_asm()
 	// Armo el assembler
 	for (i = 0; i < terceto_index; i++) 
 	{
-		printf("\n%s\n",tercetos[i].uno);
+		//printf("\n%s\n",tercetos[i].uno);
 		if (strcmp("", tercetos[i].dos) == 0) {
 			opSimple = 1;
 			opUnaria = 0;
@@ -471,7 +473,7 @@ void genera_asm()
 			if (strcmp("WRITE", tercetos[i].uno) == 0) 
 			{	
 				
-				struct tabla dato = buscarTipoTS(tercetos[atoi(tercetos[i].dos)].uno);
+				dato = buscarTipoTS(tercetos[atoi(tercetos[i].dos)].uno);
 
 				if(dato.var == STRING){
 					
@@ -509,88 +511,54 @@ void genera_asm()
 					fprintf(pf_asm, "\t %s BRANCH_%s \t\t\t\t;Salto al branch \n", codigo,tercetos[i].dos);
 				}
 			}
- 		}/*
+ 		}
 		else {
-			// Expresiones ; Comparaciones ; Asignacion
-			char *op2 = (char*) malloc(100*sizeof(char));
-			strcpy(op2, lista_operandos_assembler[cant_op]);
-			cant_op--;
-
-			char *op1 = (char*) malloc(100*sizeof(char));
-			if (strcmp(tercetos[i].uno, "CMP" ) == 0 && strcmp(ult_op1_cmp, tercetos[i].dos) == 0 )
-			{
-				strcpy(op1, op1_guardado);
-			}
-			else 
-			{
-				strcpy(op1, lista_operandos_assembler[cant_op]); 
-				cant_op--;
-				strcpy(op1_guardado, op1);
-			}
+			//Comparaciones ; Asignacion
 			
 			if (strcmp(tercetos[i].uno, "=" ) == 0)
 			{
-				int tipo = buscarTipoTS(tercetos[atoi(tercetos[i].dos)].uno);
-				if (tipo == Float | tipo == Integer) // Si se quiere separar integer hay que ver tambien las expresiones
-				{
-					fprintf(pf_asm, "\t FLD %s \t;Cargo valor \n", guardadoEnTabla(op1));
-					fprintf(pf_asm, "\t FSTP %s \t; Se lo asigno a la variable que va a guardar el resultado \n", guardadoEnTabla(op2));
-				}
-				else
-				{0
-					fprintf(pf_asm, "\t mov si,OFFSET %s \t;Cargo en si el origen\n", guardadoEnTabla(op1));
-					fprintf(pf_asm, "\t mov di,OFFSET %s \t; cargo en di el destino \n", guardadoEnTabla(op2));
-					fprintf(pf_asm, "\t STRCPY\t; llamo a la macro para copiar \n");
-				}	
+					dato = buscarTipoTS(tercetos[atoi(tercetos[i].dos)].uno);
+					fprintf(pf_asm, "\t FLD @cont \t\t\t;Cargo valor \n");
+					fprintf(pf_asm, "\t FSTP %s \t\t\t; Se lo asigno a la variable que va a guardar el resultado \n\n", dato.nombre);
 			}
 			else if (strcmp(tercetos[i].uno, "CMP" ) == 0)
 			{
-				int tipo = buscarTipoTS(op1);
-				if (tipo == Float | tipo == Integer) 
-				{
-					fprintf(pf_asm, "\t FLD %s\t\t;comparacion, operando1 \n", guardadoEnTabla(op1));
-					fprintf(pf_asm, "\t FLD %s\t\t;comparacion, operando2 \n", guardadoEnTabla(op2));
-					fprintf(pf_asm, "\t FCOMP\t\t;Comparo \n");
-					fprintf(pf_asm, "\t FFREE ST(0) \t; Vacio ST0\n");
-					fprintf(pf_asm, "\t FSTSW AX \t\t; mueve los bits C a FLAGS\n");
-					fprintf(pf_asm, "\t SAHF \t\t\t;Almacena el registro AH en el registro FLAGS \n");
-				}
-				else
-				{
-					fprintf(pf_asm, "\t mov si,OFFSET %s \t;Cargo operando1\n", guardadoEnTabla(op1));
-					fprintf(pf_asm, "\t mov di,OFFSET %s \t; cargo operando2 \n", guardadoEnTabla(op2));
-					fprintf(pf_asm, "\t STRCMP\t; llamo a la macro para comparar \n");	
-				}
+					fprintf(pf_asm, "\t FLD @cont\t\t \n");
+					fprintf(pf_asm, "\t FLD @1\t\t \n");
+					fprintf(pf_asm, "\t FADD \t\t \n");
+					fprintf(pf_asm, "\t FSTP @cont \t\t\t\n\n");
+					
+					dato = buscarTipoTS(tercetos[atoi(tercetos[i].dos)].uno);
+					dato2 = buscarTipoTS(tercetos[atoi(tercetos[i].tres)].uno);
+					printf("%s",dato.nombre);
 
-				strcpy(ult_op1_cmp, tercetos[i].dos);
+					fprintf(pf_asm, "\n\t FLD %s\t\t \n", dato.nombre);
+					fprintf(pf_asm, "\t FLD %s\t\t\n", dato2.nombre);
+					fprintf(pf_asm, "\t FCOMP\t\t\n");
+					fprintf(pf_asm, "\t FFREE ST(0) \t\n");
+					fprintf(pf_asm, "\t FSTSW AX \t\t\n");
+					fprintf(pf_asm, "\t SAHF \t\t\t\n\n");
+					
 			}
-			else
-			{
-				sprintf(aux, "_aux%d", i); // auxiliar relacionado al terceto
-				fflush(pf_asm);
-				fprintf(pf_asm, "\t FLD %s \t;Cargo operando 1\n", guardadoEnTabla(op1));
-				fprintf(pf_asm, "\t FLD %s \t;Cargo operando 2\n", guardadoEnTabla(op2));
-				fflush(pf_asm);
-
-				fprintf(pf_asm, "\t %s \t\t;Opero\n", getCodOp(tercetos[i].uno));
-				fprintf(pf_asm, "\t FSTP %s \t;Almaceno el resultado en una var auxiliar\n", guardadoEnTabla(aux));
-				
-				cant_op++;
-				strcpy(lista_operandos_assembler[cant_op], aux);
-			}*/
-
+		}
 	}
+
+	/*generamos el final */
+	fprintf(pf_asm, "\n\n\t mov AX, 4C00h \t ; Genera la interrupcion 21h\n");
+	fprintf(pf_asm, "\t int 21h \t ; Genera la interrupcion 21h\n");
+
+	fprintf(pf_asm, "\nEND MAIN\n");
 
 		 fclose(pf_asm);
 	
 }
 
 void generarInicio(FILE *arch){
-  fprintf(arch, "include macros2.asm\ninclude number.asm\n\n.MODEL SMALL\n.386\n.STACK 200h\n\n");
+  fprintf(arch, "include macros2.asm\ninclude number.asm\n\n.MODEL LARGE\n.386\n.STACK 200h\n\n");
 }
 
 void generarInicioCodigo(FILE* arch){
-	fprintf(arch, ".CODE\nSTART:\nMOV AX, @DATA\nMOV DS, AX\n\n");
+	fprintf(arch, ".CODE\n\nMAIN:\nMOV AX, @DATA\nMOV DS, AX\n\n");
 }
 
 void generarFinal(FILE *arch){
@@ -604,20 +572,20 @@ void generarTabla(FILE *arch){
 
     for(int i=0; i<total_variables; i++){
 		printf("NOMBRE ASSEMBLER:	%s\n", variables_id[i].nombre);
-        fprintf(arch, "%s\t ", variables_id[i].nombre);
+        fprintf(arch, "%s\t\t ", variables_id[i].nombre);
         switch(variables_id[i].var){
         case INTEGER:
-            fprintf(arch, "dd\t %d\n", variables_id[i].valorI);
+            fprintf(arch, "dd\t\t %d\n", variables_id[i].valorI);
             break;
         case STRING:
-            fprintf(arch, "db\t \"%s\", '$'\n", variables_id[i].valorS);
+            fprintf(arch, "db\t\t \"%s\", '$'\n", variables_id[i].valorS);
             break;
         default: //Es una variable int, float o puntero a string
-            fprintf(arch, "dd\t ?\n");
+            fprintf(arch, "dd\t\t ?\n");
         }
     }
-	fprintf(arch, "@cont\tdd\t0\n");
-	fprintf(arch, "_1_\tdd\t1\n");
+	fprintf(arch, "@cont\t\tdd\t0\n");
+	fprintf(arch, "@1\t\tdd\t1\n");
     fprintf(arch, "\n\n");
 }
 
@@ -670,7 +638,7 @@ void insertarentablaCTE_S(char *str){
 
 void insertarentablaID(char* id){
 	
-	printf("ID = %s\n", id);
+	//printf("ID = %s\n", id);
 	if(lista_valores < TOTAL){
 		struct tabla tabla_aux;
 		tabla_aux.nombre = malloc(sizeof(char)*strlen(id)+1);
@@ -709,13 +677,17 @@ char *generaNombreASM(char *str, int tipo){
 
 struct tabla buscarTipoTS(char* nombreVar) {
 
-	int i,a;
+	int i;
+	char * aux = malloc(sizeof(char)*strlen(nombreVar)+2);
+		strcpy(aux, "_");
+		strcat(aux,nombreVar);
 		
 		char *nomCte = malloc(sizeof(char)*strlen(nombreVar)+2);
 		strcpy(nomCte, nombreVar);
-
+		printf("%s\n",nomCte);
 		for(i=0; i< total_variables;i++){
-			if( strcmp(nomCte, variables_id[i].valorS) == 0){
+			if( strcmp(nomCte, variables_id[i].valorS) == 0 || strcmp(nomCte, variables_id[i].nombre) == 0 ||  strcmp(aux, variables_id[i].nombre) == 0 ){
+					printf("LA VARIABLE ES: %s\n",variables_id[i].nombre);
 				return variables_id[i];
 			}
 		
